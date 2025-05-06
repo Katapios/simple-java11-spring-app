@@ -1,25 +1,30 @@
-# Строим фронтенд
-FROM node:20 AS frontend-builder
+# === Stage 1: Build frontend ===
+FROM node:20-alpine AS frontend-build
 WORKDIR /app
-COPY frontend/ ./frontend
-WORKDIR /app/frontend
-RUN npm install && npm run build
+COPY frontend/package*.json ./
+RUN npm install
+COPY frontend/ ./
+RUN npm run build
 
-# Строим backend
-FROM maven:3.9.4-eclipse-temurin-17 AS backend-builder
+# === Stage 2: Build backend ===
+FROM maven:3.9.6-eclipse-temurin-17 AS backend-build
 WORKDIR /app
-COPY . .
+COPY pom.xml ./
+COPY src ./src
 RUN mvn clean package -DskipTests
 
-# Финальный контейнер
-FROM eclipse-temurin:17-jdk
+# === Stage 3: Create final image ===
+FROM eclipse-temurin:17-jdk-alpine
 WORKDIR /app
 
-# Копируем собранный jar
-COPY --from=backend-builder /app/target/*.jar app.jar
+# Copy backend jar
+COPY --from=backend-build /app/target/*.jar app.jar
 
-# Копируем фронтенд как статику
-COPY --from=frontend-builder /app/frontend/dist /app/public
+# Copy frontend static files into resources (Spring Boot will serve them)
+COPY --from=frontend-build /app/dist/ /app/static/
+
+# Set env to tell Spring where to look for static files
+ENV SPRING_WEB_RESOURCES_STATIC_LOCATIONS=file:/app/static/
 
 EXPOSE 8081
-CMD ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
