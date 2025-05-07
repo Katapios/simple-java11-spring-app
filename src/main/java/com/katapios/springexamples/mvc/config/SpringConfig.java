@@ -20,7 +20,7 @@ import java.util.Arrays;
 @Configuration
 @EnableWebMvc
 @ComponentScan("com.katapios.springexamples.mvc")
-public class  SpringConfig implements WebMvcConfigurer {
+public class SpringConfig implements WebMvcConfigurer {
     private final ApplicationContext applicationContext;
 
     public SpringConfig(ApplicationContext applicationContext) {
@@ -34,24 +34,38 @@ public class  SpringConfig implements WebMvcConfigurer {
     }
 
 
+    //    @Bean
+//    public DataSource dataSource(){
+//        DriverManagerDataSource dataSource = new DriverManagerDataSource();
+//
+//        dataSource.setDriverClassName("org.postgresql.Driver");
+//        dataSource.setUrl("jdbc:postgresql://localhost:5432/springmvc");
+//        dataSource.setUsername("postgres");
+//        dataSource.setPassword("postgres");
+//        return dataSource;
+//    }
     @Bean
-    public DataSource dataSource(){
+    public DataSource dataSource() {
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
 
+        String url = System.getenv().getOrDefault("MYAPP_JDBC_URL", "jdbc:postgresql://localhost:5432/springmvc");
+        String username = System.getenv().getOrDefault("MYAPP_JDBC_USER", "postgres");
+        String password = System.getenv().getOrDefault("MYAPP_JDBC_PASS", "postgres");
+
         dataSource.setDriverClassName("org.postgresql.Driver");
-        dataSource.setUrl("jdbc:postgresql://localhost:5432/springmvc");
-        dataSource.setUsername("postgres");
-        dataSource.setPassword("postgres");
+        dataSource.setUrl(url);
+        dataSource.setUsername(username);
+        dataSource.setPassword(password);
         return dataSource;
     }
 
     @Bean
-    public JdbcTemplate jdbcTemplate(){
+    public JdbcTemplate jdbcTemplate() {
         return new JdbcTemplate(dataSource());
     }
 
     @Bean
-    public FilterRegistrationBean hiddenHttpMethodFilter(){
+    public FilterRegistrationBean hiddenHttpMethodFilter() {
         FilterRegistrationBean FilterRegBean = new FilterRegistrationBean(new HiddenHttpMethodFilter());
         FilterRegBean.setUrlPatterns(Arrays.asList("/*"));
         return FilterRegBean;
