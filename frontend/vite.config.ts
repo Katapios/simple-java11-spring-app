@@ -8,4 +8,14 @@ export default defineConfig({
     outDir: 'dist', // куда кладутся сборочные файлы
     emptyOutDir: true,
   },
+  server: {
+    port: 5173, // можно опустить, если по умолчанию
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8081',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
 })

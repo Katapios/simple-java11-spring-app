@@ -14,7 +14,8 @@ function App() {
 
     // Получаем всех пользователей с сервера
     const fetchPeople = async () => {
-        const res = await fetch("http://localhost:8081/api/persons");
+        // const res = await fetch("http://localhost:8081/api/persons");
+        const res = await fetch("/api/persons");
         const data = await res.json();
         setPeople(data);
     };
@@ -33,14 +34,17 @@ function App() {
         e.preventDefault();
         if (editingId === null) {
             // create
-            await fetch("http://localhost:8081/api/persons", {
+            // await fetch("http://localhost:8081/api/persons", {
+            await fetch("/api/persons", {
+
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(person),
             });
         } else {
             // update
-            await fetch(`http://localhost:8081/api/persons/${editingId}`, {
+            // await fetch(`http://localhost:8081/api/persons/${editingId}`, {
+            await fetch(`/api/persons/${editingId}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(person),
@@ -52,7 +56,8 @@ function App() {
     };
 
     const handleDelete = async (id: number) => {
-        await fetch(`http://localhost:8081/api/persons/${id}`, {
+        // await fetch(`http://localhost:8081/api/persons/${id}`, {
+        await fetch(`/api/persons/${id}`, {
             method: "DELETE",
         });
         fetchPeople(); // обновим список после удаления
@@ -75,7 +80,7 @@ function App() {
                 ))}
             </ul>
 
-            <h2>Добавить пользователя</h2>
+            <h2>Новый пользователь</h2>
             <form onSubmit={handleSubmit}>
                 <input name="name" value={person.name} onChange={handleChange} placeholder="Имя" required />
                 <input name="age" value={person.age} onChange={handleChange} type="number" placeholder="Возраст" required />
