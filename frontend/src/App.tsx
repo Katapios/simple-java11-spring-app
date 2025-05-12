@@ -75,7 +75,7 @@ function App() {
                 ))}
             </ul>
 
-            <h2>Добавить нового</h2>
+            <h2>Добавить нового пользователя</h2>
             <form onSubmit={handleSubmit}>
                 <input name="name" value={person.name} onChange={handleChange} placeholder="Имя" required />
                 <input name="age" value={person.age} onChange={handleChange} type="number" placeholder="Возраст" required />
