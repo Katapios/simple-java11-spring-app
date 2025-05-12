@@ -1,30 +1,22 @@
-# === Stage 1: Build frontend ===
-FROM node:20-alpine AS frontend-build
+# --- STAGE 1: Build the app ---
+FROM maven:3.8.5-openjdk-11-slim AS build
 WORKDIR /app
-COPY frontend/package*.json ./
-RUN npm install
-COPY frontend/ ./
-RUN npm run build
 
-# === Stage 2: Build backend ===
-FROM maven:3.9.6-eclipse-temurin-17 AS backend-build
-WORKDIR /app
-COPY pom.xml ./
-COPY src ./src
+# Кэшим зависимости
+COPY pom.xml .
+COPY frontend/package*.json ./frontend/
+RUN mvn dependency:go-offline
+
+# Копируем остальное и собираем
+COPY . .
 RUN mvn clean package -DskipTests
 
-# === Stage 3: Create final image ===
-FROM eclipse-temurin:17-jdk-alpine
+# --- STAGE 2: Run the app ---
+FROM openjdk:11-jre-slim
 WORKDIR /app
 
-# Copy backend jar
-COPY --from=backend-build /app/target/*.jar app.jar
-
-# Copy frontend static files into resources (Spring Boot will serve them)
-COPY --from=frontend-build /app/dist/ /app/static/
-
-# Set env to tell Spring where to look for static files
-ENV SPRING_WEB_RESOURCES_STATIC_LOCATIONS=file:/app/static/
+# Копируем скомпилированный .war
+COPY --from=build /app/target/SpringHello-0.0.1-SNAPSHOT.war app.war
 
 EXPOSE 8081
-ENTRYPOINT ["java", "-jar", "app.jar"]
+CMD ["java", "-jar", "app.war"]
