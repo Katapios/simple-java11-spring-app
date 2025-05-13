@@ -10,7 +10,17 @@ export function ThemeToggle() {
             className="theme-toggle-button"
             aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
         >
-            {theme === 'dark' ? '🌞' : '🌙'}
+            {theme === 'dark' ? (
+                <>
+                    <span className="icon">🌞</span>
+                    <span className="text">Светлая тема</span>
+                </>
+            ) : (
+                <>
+                    <span className="icon">🌙</span>
+                    <span className="text">Темная тема</span>
+                </>
+            )}
         </button>
     );
 }

@@ -288,3 +288,235 @@ input {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
+/* Стили для грид-таблицы */
+.user-grid-container {
+    overflow-x: auto;
+}
+
+.user-grid-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.user-grid {
+    display: grid;
+    grid-template-columns: 80px 1fr 100px 1fr 200px;
+    width: 100%;
+    border: 1px solid var(--text-secondary);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.grid-header {
+    display: contents;
+}
+
+.grid-header > .grid-cell {
+    background: var(--accent);
+    color: white;
+    padding: 1rem;
+    font-weight: bold;
+    text-align: left;
+}
+
+.grid-row {
+    display: contents;
+}
+
+.grid-row:nth-child(even) > .grid-cell {
+    background: var(--bg-secondary);
+}
+
+.grid-cell {
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid var(--text-secondary);
+    display: flex;
+    align-items: center;
+}
+
+.actions {
+    gap: 0.5rem;
+}
+
+.no-data {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+}
+
+/* Адаптивность */
+@media (max-width: 1200px) {
+    .user-grid {
+        grid-template-columns: 60px 1fr 80px 1fr 180px;
+    }
+}
+
+@media (max-width: 992px) {
+    .user-grid {
+        grid-template-columns: 50px 1fr 70px 1fr 160px;
+    }
+
+    .button {
+        padding: 0.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .user-grid {
+        display: block;
+        grid-template-columns: none;
+    }
+
+    .grid-header {
+        display: none;
+    }
+
+    .grid-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        border-bottom: 1px solid var(--text-secondary);
+        padding: 1rem 0;
+    }
+
+    .grid-cell {
+        border-bottom: none;
+    }
+
+    .grid-cell::before {
+        content: attr(data-label);
+        font-weight: bold;
+        margin-right: 0.5rem;
+        color: var(--accent);
+    }
+
+    .grid-cell:nth-child(1) { grid-area: 1 / 1; data-label: "ID: " }
+    .grid-cell:nth-child(2) { grid-area: 1 / 2; data-label: "Имя: " }
+    .grid-cell:nth-child(3) { grid-area: 2 / 1; data-label: "Возраст: " }
+    .grid-cell:nth-child(4) { grid-area: 2 / 2; data-label: "Email: " }
+    .grid-cell:nth-child(5) {
+        grid-area: 3 / 1 / span 1 / span 2;
+        justify-content: center;
+        margin-top: 0.5rem;
+    }
+
+    .actions {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
+
+.theme-toggle-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--text-secondary);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.theme-toggle-button .text {
+    font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+    .theme-toggle-button .text {
+        display: none;
+    }
+}
+
+/* Стили для таблицы */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    margin-bottom: 1rem;
+}
+
+.user-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--bg-primary);
+}
+
+.user-table th,
+.user-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid var(--text-secondary);
+}
+
+.user-table th {
+    background: var(--accent);
+    color: white;
+    font-weight: bold;
+}
+
+.user-table tr:nth-child(even) {
+    background: var(--bg-secondary);
+}
+
+.user-table tr:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Адаптивность таблицы */
+@media (max-width: 768px) {
+    .table-responsive {
+        display: block;
+    }
+
+    .user-table {
+        display: block;
+    }
+
+    .user-table thead {
+        display: none;
+    }
+
+    .user-table tr {
+        display: block;
+        margin-bottom: 1rem;
+        border: 1px solid var(--text-secondary);
+        border-radius: 4px;
+    }
+
+    .user-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        border-bottom: none;
+    }
+
+    .user-table td::before {
+        content: attr(data-label);
+        font-weight: bold;
+        margin-right: 1rem;
+        color: var(--accent);
+    }
+
+    .actions {
+        flex-direction: column;
+    }
+}
+
+.no-data {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+}
+
+.refresh-button {
+    margin-top: 1rem;
+    background: var(--accent);
+    color: white;
+}

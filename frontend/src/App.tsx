@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useMemo } from 'react';
+import { useState, useEffect, createContext } from 'react';
 import { ThemeToggle } from './components/ThemeToggle';
 import './styles/global.css';
 
@@ -17,22 +17,17 @@ type ThemeContextType = {
 export const ThemeContext = createContext<ThemeContextType>({} as ThemeContextType);
 
 export function App() {
-    // Состояния для данных
-    const [person, setPerson] = useState<Person>({ name: '', age: 0, email: '' });
+    const [person, setPerson] = useState<Person>({ name: "", age: 0, email: "" });
     const [people, setPeople] = useState<Person[]>([]);
     const [editingId, setEditingId] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-
-    // Состояния для пагинации
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [totalItems, setTotalItems] = useState(0);
-
-    // Состояние темы
     const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
-    // Управление темой
+    // Инициализация темы
     useEffect(() => {
         const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
         const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -51,7 +46,6 @@ export function App() {
         setIsLoading(true);
         try {
             const res = await fetch(`/api/persons?page=${currentPage}&size=${itemsPerPage}`);
-
             if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
 
             const total = Number(res.headers.get('X-Total-Count')) || 0;
@@ -61,7 +55,6 @@ export function App() {
             setPeople(data);
         } catch (err) {
             setError('Ошибка загрузки данных');
-            console.error('Fetch error:', err);
         } finally {
             setIsLoading(false);
         }
@@ -71,27 +64,25 @@ export function App() {
         fetchPeople();
     }, [currentPage, itemsPerPage]);
 
-    // Обработчики формы
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setPerson({ ...person, [e.target.name]: e.target.value });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
         try {
-            const url = editingId ? `/api/persons/${editingId}` : '/api/persons';
-            const method = editingId ? 'PUT' : 'POST';
+            const url = editingId ? `/api/persons/${editingId}` : "/api/persons";
+            const method = editingId ? "PUT" : "POST";
 
             const response = await fetch(url, {
                 method,
-                headers: { 'Content-Type': 'application/json' },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(person),
             });
 
             if (!response.ok) throw new Error('Ошибка сохранения');
 
-            setPerson({ name: '', age: 0, email: '' });
+            setPerson({ name: "", age: 0, email: "" });
             setEditingId(null);
             fetchPeople();
         } catch (err) {
@@ -106,7 +97,6 @@ export function App() {
             const response = await fetch(`/api/persons/${id}`, { method: 'DELETE' });
             if (!response.ok) throw new Error('Ошибка удаления');
 
-            // Если удалили последний элемент на странице, переходим на предыдущую страницу
             if (people.length === 1 && currentPage > 1) {
                 setCurrentPage(currentPage - 1);
             } else {
@@ -133,17 +123,10 @@ export function App() {
 
         return (
             <div className="pagination">
-                <button
-                    onClick={() => setCurrentPage(1)}
-                    disabled={currentPage === 1}
-                >
+                <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1}>
                     «
                 </button>
-
-                <button
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                >
+                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
                     ‹
                 </button>
 
@@ -161,17 +144,10 @@ export function App() {
 
                 {endPage < totalPages && <span className="ellipsis">...</span>}
 
-                <button
-                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                >
+                <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>
                     ›
                 </button>
-
-                <button
-                    onClick={() => setCurrentPage(totalPages)}
-                    disabled={currentPage === totalPages}
-                >
+                <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages}>
                     »
                 </button>
 
@@ -188,8 +164,6 @@ export function App() {
                         </option>
                     ))}
                 </select>
-
-                <span className="total-items">Всего: {totalItems}</span>
             </div>
         );
     };
@@ -209,52 +183,76 @@ export function App() {
                 )}
 
                 <main className="main-content">
-                    <section className="card user-list">
-                        <h2>Текущие пользователи</h2>
+                    <section className="card user-grid-container">
+                        <div className="grid-header-row">
+                            <h2>Текущие пользователи</h2>
+                            <div className="total-items">Всего: {totalItems}</div>
+                        </div>
 
                         {isLoading ? (
-                            <div className="loader" />
+                            <div className="loader-container">
+                                <div className="loader" />
+                            </div>
                         ) : (
                             <>
                                 {people.length === 0 ? (
-                                    <p>Нет данных для отображения</p>
+                                    <div className="no-data">
+                                        <p>Нет данных для отображения</p>
+                                        <button className="button refresh-button" onClick={fetchPeople}>
+                                            Обновить
+                                        </button>
+                                    </div>
                                 ) : (
-                                    <ul className="list">
-                                        {people.map((p) => (
-                                            <li key={p.id} className="list-item">
-                                                <div className="user-info">
-                                                    <span className="user-name">{p.name}</span>
-                                                    <span className="user-age">({p.age})</span>
-                                                    <span className="user-email">{p.email}</span>
-                                                </div>
-                                                <div className="user-actions">
-                                                    <button
-                                                        className="button edit-button"
-                                                        onClick={() => {
-                                                            setPerson(p);
-                                                            setEditingId(p.id!);
-                                                        }}
-                                                    >
-                                                        ✏️
-                                                    </button>
-                                                    <button
-                                                        className="button delete-button"
-                                                        onClick={() => handleDelete(p.id!)}
-                                                    >
-                                                        🗑️
-                                                    </button>
-                                                </div>
-                                            </li>
-                                        ))}
-                                    </ul>
+                                    <>
+                                        <div className="table-responsive">
+                                            <table className="user-table">
+                                                <thead>
+                                                <tr>
+                                                    <th>ID</th>
+                                                    <th>Имя</th>
+                                                    <th>Возраст</th>
+                                                    <th>Email</th>
+                                                    <th>Действия</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                {people.map((p) => (
+                                                    <tr key={p.id}>
+                                                        <td>{p.id}</td>
+                                                        <td>{p.name}</td>
+                                                        <td>{p.age}</td>
+                                                        <td>{p.email}</td>
+                                                        <td className="actions">
+                                                            <button
+                                                                className="button edit-button"
+                                                                onClick={() => {
+                                                                    setPerson(p);
+                                                                    setEditingId(p.id!);
+                                                                }}
+                                                            >
+                                                                ✏️ Редактировать
+                                                            </button>
+                                                            <button
+                                                                className="button delete-button"
+                                                                onClick={() => handleDelete(p.id!)}
+                                                            >
+                                                                🗑️ Удалить
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        {totalItems > itemsPerPage && <Pagination />}
+                                    </>
                                 )}
-                                <Pagination />
                             </>
                         )}
                     </section>
 
                     <section className="card user-form">
-                        <h2>{editingId ? 'Редактирование' : 'Новый пользователь'}</h2>
+                        <h2>{editingId ? "Редактирование" : "Новый пользователь"}</h2>
                         <form onSubmit={handleSubmit} className="form">
                             <div className="form-group">
                                 <label htmlFor="name">Имя</label>
@@ -273,7 +271,7 @@ export function App() {
                                     id="age"
                                     name="age"
                                     type="number"
-                                    value={person.age || ''}
+                                    value={person.age || ""}
                                     onChange={handleChange}
                                     min="1"
                                     max="150"
@@ -295,14 +293,14 @@ export function App() {
 
                             <div className="form-actions">
                                 <button type="submit" className="button submit-button">
-                                    {editingId ? 'Обновить' : 'Добавить'}
+                                    {editingId ? "Обновить" : "Добавить"}
                                 </button>
                                 {editingId && (
                                     <button
                                         type="button"
                                         className="button cancel-button"
                                         onClick={() => {
-                                            setPerson({ name: '', age: 0, email: '' });
+                                            setPerson({ name: "", age: 0, email: "" });
                                             setEditingId(null);
                                         }}
                                     >
