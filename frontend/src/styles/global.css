@@ -135,3 +135,156 @@ input {
     font-style: italic;
     opacity: 0.9;
 }
+
+/* Добавить эти стили в конец файла */
+.controls {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.search-input {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--text-secondary);
+    border-radius: 4px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    width: 300px;
+}
+
+.list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.sort-controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.sort-controls button {
+    padding: 0.25rem 0.5rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--text-secondary);
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.cancel-button {
+    background: #6b7280;
+    color: white;
+}
+
+.error-banner {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 1rem 2rem;
+    background: #ef4444;
+    color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    z-index: 1000;
+}
+
+.loader {
+    border: 3px solid var(--bg-secondary);
+    border-top: 3px solid var(--accent);
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    animation: spin 1s linear infinite;
+    margin: 2rem auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Pagination styles */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+}
+
+.pagination button {
+    min-width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    border: 1px solid var(--text-secondary);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.pagination button.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+}
+
+.pagination button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination .ellipsis {
+    padding: 0 0.5rem;
+}
+
+.pagination select {
+    padding: 0.5rem;
+    border-radius: 4px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--text-secondary);
+}
+
+.pagination .total-items {
+    margin-left: 1rem;
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+/* Error banner */
+.error-banner {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 1rem 2rem;
+    background: #ef4444;
+    color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    z-index: 1000;
+    cursor: pointer;
+}
+
+/* Loader */
+.loader {
+    border: 3px solid var(--bg-secondary);
+    border-top: 3px solid var(--accent);
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    animation: spin 1s linear infinite;
+    margin: 2rem auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

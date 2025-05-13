@@ -1,15 +1,18 @@
 import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import react from '@vitejs/plugin-react-swc' // Более быстрый компилятор
 
+// https://vitejs.dev/config/
 export default defineConfig({
-  base: "/", // оставь так, если фронт доступен по корню
+  base: "/",
   plugins: [react()],
   build: {
-    outDir: 'dist', // куда кладутся сборочные файлы
+    outDir: 'dist',
     emptyOutDir: true,
+    sourcemap: true // Для отладки в production
   },
   server: {
-    port: 5173, // можно опустить, если по умолчанию
+    port: 5173,
+    strictPort: true, // Запретить автоматический выбор порта
     proxy: {
       '/api': {
         target: 'http://localhost:8081',
@@ -18,4 +21,8 @@ export default defineConfig({
       },
     },
   },
+  optimizeDeps: {
+    include: ['react', 'react-dom'] // Оптимизация зависимостей
+  }
 })
+
