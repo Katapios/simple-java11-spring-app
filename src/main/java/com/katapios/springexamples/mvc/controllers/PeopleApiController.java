@@ -23,10 +23,21 @@ public class PeopleApiController {
     @GetMapping("/persons")
     public ResponseEntity<List<Person>> getAllPersons(
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false, defaultValue = "id") String sort,
+            @RequestParam(required = false, defaultValue = "asc") String order) {
 
-        List<Person> persons = peopleDAO.index(page, size);
-        int totalCount = peopleDAO.getTotalCount();
+        List<Person> persons;
+        int totalCount;
+
+        if (search != null && !search.isEmpty()) {
+            persons = peopleDAO.search(search, page, size, sort, order);
+            totalCount = peopleDAO.getSearchCount(search);
+        } else {
+            persons = peopleDAO.index(page, size, sort, order);
+            totalCount = peopleDAO.getTotalCount();
+        }
 
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-Total-Count", String.valueOf(totalCount));
@@ -36,6 +47,7 @@ public class PeopleApiController {
                 .body(persons);
     }
 
+    // Остальные методы остаются без изменений
     @PostMapping("/persons")
     public void createPerson(@RequestBody Person person) {
         peopleDAO.save(person);

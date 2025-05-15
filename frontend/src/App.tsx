@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext } from 'react';
+import React, { useState, useEffect, createContext, useCallback } from 'react';
 import { ThemeToggle } from './components/ThemeToggle';
 import './styles/global.css';
 
@@ -31,7 +31,12 @@ export function App() {
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [totalItems, setTotalItems] = useState(0);
     const [theme, setTheme] = useState<'light' | 'dark'>('light');
-    const [sortConfig, setSortConfig] = useState<SortConfig>({ field: 'id', direction: 'asc' });
+    const [searchTerm, setSearchTerm] = useState('');
+    const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+    const [sortConfig, setSortConfig] = useState<SortConfig>({
+        field: 'id',
+        direction: 'asc'
+    });
 
     // Инициализация темы
     useEffect(() => {
@@ -47,12 +52,32 @@ export function App() {
 
     const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
 
-    // Загрузка данных с пагинацией
-    const fetchPeople = async () => {
+    // Функция для выполнения поиска с debounce
+    const handleSearch = useCallback((term: string) => {
+        if (searchTimeout) {
+            clearTimeout(searchTimeout);
+        }
+
+        const timeout = setTimeout(() => {
+            fetchPeople(term);
+        }, 500);
+
+        setSearchTimeout(timeout);
+    }, [searchTimeout]);
+
+    // Загрузка данных с пагинацией и поиском
+    const fetchPeople = async (search: string = '') => {
         setIsLoading(true);
         setError(null);
         try {
-            const res = await fetch(`/api/persons?page=${currentPage}&size=${itemsPerPage}`);
+            let url = `/api/persons?page=${currentPage}&size=${itemsPerPage}`;
+            if (search) {
+                url += `&search=${encodeURIComponent(search)}`;
+            }
+            // Добавляем параметры сортировки в запрос
+            url += `&sort=${sortConfig.field}&order=${sortConfig.direction}`;
+
+            const res = await fetch(url);
             if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
 
             const totalCount = res.headers.get('X-Total-Count');
@@ -72,11 +97,19 @@ export function App() {
     };
 
     useEffect(() => {
-        fetchPeople();
-    }, [currentPage, itemsPerPage]);
+        fetchPeople(searchTerm);
+    }, [currentPage, itemsPerPage, sortConfig]); // Добавляем sortConfig в зависимости
 
-    // Сортировка данных
-    const requestSort = (field: keyof Person) => {
+    // Обработчик изменения поискового запроса
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setSearchTerm(value);
+        setCurrentPage(1); // Сброс на первую страницу при новом поиске
+        handleSearch(value);
+    };
+
+    // Обработчик сортировки
+    const handleSort = (field: keyof Person) => {
         let direction: 'asc' | 'desc' = 'asc';
         if (sortConfig.field === field && sortConfig.direction === 'asc') {
             direction = 'desc';
@@ -84,31 +117,7 @@ export function App() {
         setSortConfig({ field, direction });
     };
 
-    const getSortedPeople = () => {
-        const sortableItems = [...people];
-        if (sortConfig.field) {
-            sortableItems.sort((a, b) => {
-                const aValue = a[sortConfig.field];
-                const bValue = b[sortConfig.field];
-
-                if (aValue === undefined || bValue === undefined) {
-                    return 0;
-                }
-
-                if (aValue < bValue) {
-                    return sortConfig.direction === 'asc' ? -1 : 1;
-                }
-                if (aValue > bValue) {
-                    return sortConfig.direction === 'asc' ? 1 : -1;
-                }
-                return 0;
-            });
-        }
-        return sortableItems;
-    };
-
-    const sortedPeople = getSortedPeople();
-
+    // Функция для получения индикатора сортировки
     const getSortIndicator = (field: keyof Person) => {
         if (sortConfig.field !== field) return null;
         return sortConfig.direction === 'asc' ? '↑' : '↓';
@@ -138,7 +147,7 @@ export function App() {
 
             setPerson({ name: "", age: 0, email: "" });
             setEditingId(null);
-            await fetchPeople();
+            await fetchPeople(searchTerm);
         } catch (err) {
             setError('Ошибка при сохранении данных');
         }
@@ -154,7 +163,7 @@ export function App() {
             if (people.length === 1 && currentPage > 1) {
                 setCurrentPage(prev => prev - 1);
             } else {
-                await fetchPeople();
+                await fetchPeople(searchTerm);
             }
         } catch (err) {
             setError('Не удалось удалить пользователя');
@@ -259,7 +268,18 @@ export function App() {
                 <main className="main-content">
                     <section className="card user-grid-container">
                         <div className="grid-header-row">
-                            <h2>Текущие пользователи</h2>
+                            <div>
+                                <h2>Текущие пользователи</h2>
+                                <div className="search-container">
+                                    <input
+                                        type="text"
+                                        placeholder="Поиск по имени, email или возрасту..."
+                                        value={searchTerm}
+                                        onChange={handleSearchChange}
+                                        className="search-input"
+                                    />
+                                </div>
+                            </div>
                             <div className="total-items">Всего: {totalItems}</div>
                         </div>
 
@@ -272,7 +292,7 @@ export function App() {
                                 {people.length === 0 ? (
                                     <div className="no-data">
                                         <p>Нет данных для отображения</p>
-                                        <button className="button refresh-button" onClick={fetchPeople}>
+                                        <button className="button refresh-button" onClick={() => fetchPeople(searchTerm)}>
                                             Обновить
                                         </button>
                                     </div>
@@ -282,23 +302,23 @@ export function App() {
                                             <table className="user-table">
                                                 <thead>
                                                 <tr>
-                                                    <th onClick={() => requestSort('id')}>
+                                                    <th onClick={() => handleSort('id')}>
                                                         ID {getSortIndicator('id')}
                                                     </th>
-                                                    <th onClick={() => requestSort('name')}>
+                                                    <th onClick={() => handleSort('name')}>
                                                         Имя {getSortIndicator('name')}
                                                     </th>
-                                                    <th onClick={() => requestSort('age')}>
+                                                    <th onClick={() => handleSort('age')}>
                                                         Возраст {getSortIndicator('age')}
                                                     </th>
-                                                    <th onClick={() => requestSort('email')}>
+                                                    <th onClick={() => handleSort('email')}>
                                                         Email {getSortIndicator('email')}
                                                     </th>
                                                     <th>Действия</th>
                                                 </tr>
                                                 </thead>
                                                 <tbody>
-                                                {sortedPeople.map((p) => (
+                                                {people.map((p) => (
                                                     <tr key={p.id}>
                                                         <td>{p.id}</td>
                                                         <td>{p.name}</td>
