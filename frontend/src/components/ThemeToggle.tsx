@@ -12,12 +12,12 @@ export function ThemeToggle() {
         >
             {theme === 'dark' ? (
                 <>
-                    <span className="icon">🌞</span>
+                    <span className="icon" aria-hidden="true">🌞</span>
                     <span className="text">Светлая тема</span>
                 </>
             ) : (
                 <>
-                    <span className="icon">🌙</span>
+                    <span className="icon" aria-hidden="true">🌙</span>
                     <span className="text">Темная тема</span>
                 </>
             )}

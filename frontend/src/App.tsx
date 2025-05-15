@@ -44,17 +44,22 @@ export function App() {
     // Загрузка данных с пагинацией
     const fetchPeople = async () => {
         setIsLoading(true);
+        setError(null);
         try {
             const res = await fetch(`/api/persons?page=${currentPage}&size=${itemsPerPage}`);
             if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
 
-            const total = Number(res.headers.get('X-Total-Count')) || 0;
-            setTotalItems(total);
-
+            const totalCount = res.headers.get('X-Total-Count');
             const data = await res.json();
+
+            if (!Array.isArray(data)) throw new Error('Invalid data format from API');
+
             setPeople(data);
+            setTotalItems(totalCount ? parseInt(totalCount) : 0);
         } catch (err) {
-            setError('Ошибка загрузки данных');
+            setError(err instanceof Error ? err.message : 'Ошибка загрузки данных');
+            setPeople([]);
+            setTotalItems(0);
         } finally {
             setIsLoading(false);
         }
@@ -65,7 +70,11 @@ export function App() {
     }, [currentPage, itemsPerPage]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setPerson({ ...person, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        setPerson(prev => ({
+            ...prev,
+            [name]: name === 'age' ? parseInt(value) || 0 : value
+        }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -84,7 +93,7 @@ export function App() {
 
             setPerson({ name: "", age: 0, email: "" });
             setEditingId(null);
-            fetchPeople();
+            await fetchPeople();
         } catch (err) {
             setError('Ошибка при сохранении данных');
         }
@@ -98,9 +107,9 @@ export function App() {
             if (!response.ok) throw new Error('Ошибка удаления');
 
             if (people.length === 1 && currentPage > 1) {
-                setCurrentPage(currentPage - 1);
+                setCurrentPage(prev => prev - 1);
             } else {
-                fetchPeople();
+                await fetchPeople();
             }
         } catch (err) {
             setError('Не удалось удалить пользователя');
@@ -110,8 +119,9 @@ export function App() {
     // Компонент пагинации
     const Pagination = () => {
         const totalPages = Math.ceil(totalItems / itemsPerPage);
-        const maxVisiblePages = 5;
+        if (totalPages <= 1) return null;
 
+        const maxVisiblePages = 5;
         let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
         let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
 
@@ -123,10 +133,18 @@ export function App() {
 
         return (
             <div className="pagination">
-                <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1}>
+                <button
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                    aria-label="Первая страница"
+                >
                     «
                 </button>
-                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
+                <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    aria-label="Предыдущая страница"
+                >
                     ‹
                 </button>
 
@@ -137,6 +155,8 @@ export function App() {
                         key={page}
                         onClick={() => setCurrentPage(page)}
                         className={currentPage === page ? 'active' : ''}
+                        aria-label={`Страница ${page}`}
+                        aria-current={currentPage === page ? 'page' : undefined}
                     >
                         {page}
                     </button>
@@ -144,10 +164,18 @@ export function App() {
 
                 {endPage < totalPages && <span className="ellipsis">...</span>}
 
-                <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>
+                <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    aria-label="Следующая страница"
+                >
                     ›
                 </button>
-                <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages}>
+                <button
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    aria-label="Последняя страница"
+                >
                     »
                 </button>
 
@@ -157,6 +185,7 @@ export function App() {
                         setItemsPerPage(Number(e.target.value));
                         setCurrentPage(1);
                     }}
+                    aria-label="Количество элементов на странице"
                 >
                     {[5, 10, 20, 50].map(size => (
                         <option key={size} value={size}>
@@ -244,7 +273,7 @@ export function App() {
                                                 </tbody>
                                             </table>
                                         </div>
-                                        {totalItems > itemsPerPage && <Pagination />}
+                                        <Pagination />
                                     </>
                                 )}
                             </>
