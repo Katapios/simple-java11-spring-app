@@ -217,36 +217,34 @@ input:focus {
 }
 
 .pagination {
-    display: grid;
-    grid-auto-flow: column;
-    gap: 0.5rem;
-    align-items: center;
+    display: flex;
     justify-content: center;
-    margin-top: 2rem;
-    padding: 1rem 0;
+    align-items: center;
+    gap: 8px;
+    margin-top: 20px;
+    padding: 10px;
+    background-color: var(--bg-secondary);
+    border-radius: 8px;
 }
 
 .pagination button {
-    min-width: 2.5rem;
-    height: 2.5rem;
-    padding: 0;
+    padding: 5px 10px;
     border: 1px solid var(--border-color);
-    background: var(--bg-primary);
+    background-color: var(--bg-primary);
     color: var(--text-primary);
-    border-radius: 0.375rem;
+    border-radius: 4px;
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .pagination button:hover:not(:disabled) {
-    border-color: var(--accent);
-    color: var(--accent);
+    background-color: var(--accent);
+    color: white;
 }
 
 .pagination button.active {
-    background: var(--accent);
+    background-color: var(--accent);
     color: white;
-    border-color: var(--accent);
 }
 
 .pagination button:disabled {
@@ -255,12 +253,11 @@ input:focus {
 }
 
 .pagination select {
-    padding: 0.5rem 0.75rem;
-    border-radius: 0.375rem;
-    background: var(--bg-primary);
+    padding: 5px;
+    border-radius: 4px;
+    background-color: var(--bg-primary);
     color: var(--text-primary);
     border: 1px solid var(--border-color);
-    margin-left: 1rem;
 }
 
 .table-responsive {
@@ -382,3 +379,37 @@ input:focus {
         margin-top: 0.5rem;
     }
 }
+
+/* Стили для сортировки */
+th {
+    cursor: pointer;
+    position: relative;
+    padding-right: 20px !important;
+    user-select: none;
+}
+
+th:hover {
+    background-color: rgba(59, 130, 246, 0.1);
+}
+
+th::after {
+    content: '';
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.3;
+}
+
+th.sort-asc::after {
+    content: '↑';
+}
+
+th.sort-desc::after {
+    content: '↓';
+}
+
+th.sort-active::after {
+    opacity: 1;
+}
+

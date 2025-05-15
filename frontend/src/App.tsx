@@ -9,6 +9,11 @@ type Person = {
     email: string;
 };
 
+type SortConfig = {
+    field: keyof Person;
+    direction: 'asc' | 'desc';
+};
+
 type ThemeContextType = {
     theme: string;
     toggleTheme: () => void;
@@ -26,6 +31,7 @@ export function App() {
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [totalItems, setTotalItems] = useState(0);
     const [theme, setTheme] = useState<'light' | 'dark'>('light');
+    const [sortConfig, setSortConfig] = useState<SortConfig>({ field: 'id', direction: 'asc' });
 
     // Инициализация темы
     useEffect(() => {
@@ -68,6 +74,45 @@ export function App() {
     useEffect(() => {
         fetchPeople();
     }, [currentPage, itemsPerPage]);
+
+    // Сортировка данных
+    const requestSort = (field: keyof Person) => {
+        let direction: 'asc' | 'desc' = 'asc';
+        if (sortConfig.field === field && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ field, direction });
+    };
+
+    const getSortedPeople = () => {
+        const sortableItems = [...people];
+        if (sortConfig.field) {
+            sortableItems.sort((a, b) => {
+                const aValue = a[sortConfig.field];
+                const bValue = b[sortConfig.field];
+
+                if (aValue === undefined || bValue === undefined) {
+                    return 0;
+                }
+
+                if (aValue < bValue) {
+                    return sortConfig.direction === 'asc' ? -1 : 1;
+                }
+                if (aValue > bValue) {
+                    return sortConfig.direction === 'asc' ? 1 : -1;
+                }
+                return 0;
+            });
+        }
+        return sortableItems;
+    };
+
+    const sortedPeople = getSortedPeople();
+
+    const getSortIndicator = (field: keyof Person) => {
+        if (sortConfig.field !== field) return null;
+        return sortConfig.direction === 'asc' ? '↑' : '↓';
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -237,15 +282,23 @@ export function App() {
                                             <table className="user-table">
                                                 <thead>
                                                 <tr>
-                                                    <th>ID</th>
-                                                    <th>Имя</th>
-                                                    <th>Возраст</th>
-                                                    <th>Email</th>
+                                                    <th onClick={() => requestSort('id')}>
+                                                        ID {getSortIndicator('id')}
+                                                    </th>
+                                                    <th onClick={() => requestSort('name')}>
+                                                        Имя {getSortIndicator('name')}
+                                                    </th>
+                                                    <th onClick={() => requestSort('age')}>
+                                                        Возраст {getSortIndicator('age')}
+                                                    </th>
+                                                    <th onClick={() => requestSort('email')}>
+                                                        Email {getSortIndicator('email')}
+                                                    </th>
                                                     <th>Действия</th>
                                                 </tr>
                                                 </thead>
                                                 <tbody>
-                                                {people.map((p) => (
+                                                {sortedPeople.map((p) => (
                                                     <tr key={p.id}>
                                                         <td>{p.id}</td>
                                                         <td>{p.name}</td>
