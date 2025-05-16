@@ -1,258 +1,109 @@
-import React, { useState, useEffect, createContext, useCallback } from 'react';
-import { ThemeToggle } from './components/ThemeToggle';
-import './styles/global.css';
+import React, { useState, useEffect } from "react";
+import usePeopleData from "./hooks/usePeopleData";
+import { PersonTable } from "./components/PersonTable/PersonTable";
+import UserForm from "./components/UserForm/UserForm";
+import { ThemeProvider } from "./contexts/ThemeContext";
+import { ThemeToggle } from "./components/ThemeToggle/ThemeToggle";
+import "./styles/global.css";
+import { Person, SortableField } from "@/types/person";
+import {ErrorBanner} from "@/components";
 
-type Person = {
-    id?: number;
-    name: string;
-    age: number;
-    email: string;
-};
+const App: React.FC = () => {
+    const {
+        people,
+        loading,
+        searchTerm,
+        sortConfig,
+        pagination,
+        setSearchTerm,
+        setSortConfig,
+        setPagination,
+        fetchPeople,
+    } = usePeopleData();
 
-type SortConfig = {
-    field: keyof Person;
-    direction: 'asc' | 'desc';
-};
-
-type ThemeContextType = {
-    theme: string;
-    toggleTheme: () => void;
-};
-
-export const ThemeContext = createContext<ThemeContextType>({} as ThemeContextType);
-
-export function App() {
-    const [person, setPerson] = useState<Person>({ name: "", age: 0, email: "" });
-    const [people, setPeople] = useState<Person[]>([]);
-    const [editingId, setEditingId] = useState<number | null>(null);
-    const [error, setError] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(10);
-    const [totalItems, setTotalItems] = useState(0);
-    const [theme, setTheme] = useState<'light' | 'dark'>('light');
-    const [searchTerm, setSearchTerm] = useState('');
-    const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
-    const [sortConfig, setSortConfig] = useState<SortConfig>({
-        field: 'id',
-        direction: 'asc'
+    const [person, setPerson] = useState<Omit<Person, "id">>({
+        name: "",
+        age: 0,
+        email: "",
     });
 
-    // Инициализация темы
-    useEffect(() => {
-        const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
-        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        setTheme(savedTheme || (systemPrefersDark ? 'dark' : 'light'));
-    }, []);
-
-    useEffect(() => {
-        document.documentElement.setAttribute('data-theme', theme);
-        localStorage.setItem('theme', theme);
-    }, [theme]);
-
-    const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
-
-    // Функция для выполнения поиска с debounce
-    const handleSearch = useCallback((term: string) => {
-        if (searchTimeout) {
-            clearTimeout(searchTimeout);
-        }
-
-        const timeout = setTimeout(() => {
-            fetchPeople(term);
-        }, 500);
-
-        setSearchTimeout(timeout);
-    }, [searchTimeout]);
-
-    // Загрузка данных с пагинацией и поиском
-    const fetchPeople = async (search: string = '') => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            let url = `/api/persons?page=${currentPage}&size=${itemsPerPage}`;
-            if (search) {
-                url += `&search=${encodeURIComponent(search)}`;
-            }
-            // Добавляем параметры сортировки в запрос
-            url += `&sort=${sortConfig.field}&order=${sortConfig.direction}`;
-
-            const res = await fetch(url);
-            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-
-            const totalCount = res.headers.get('X-Total-Count');
-            const data = await res.json();
-
-            if (!Array.isArray(data)) throw new Error('Invalid data format from API');
-
-            setPeople(data);
-            setTotalItems(totalCount ? parseInt(totalCount) : 0);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Ошибка загрузки данных');
-            setPeople([]);
-            setTotalItems(0);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    const [editingId, setEditingId] = useState<number | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         fetchPeople(searchTerm);
-    }, [currentPage, itemsPerPage, sortConfig]); // Добавляем sortConfig в зависимости
-
-    // Обработчик изменения поискового запроса
-    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        setSearchTerm(value);
-        setCurrentPage(1); // Сброс на первую страницу при новом поиске
-        handleSearch(value);
-    };
-
-    // Обработчик сортировки
-    const handleSort = (field: keyof Person) => {
-        let direction: 'asc' | 'desc' = 'asc';
-        if (sortConfig.field === field && sortConfig.direction === 'asc') {
-            direction = 'desc';
-        }
-        setSortConfig({ field, direction });
-    };
-
-    // Функция для получения индикатора сортировки
-    const getSortIndicator = (field: keyof Person) => {
-        if (sortConfig.field !== field) return null;
-        return sortConfig.direction === 'asc' ? '↑' : '↓';
-    };
+    }, [pagination.page, pagination.size, sortConfig]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setPerson(prev => ({
+        setPerson((prev) => ({
             ...prev,
-            [name]: name === 'age' ? parseInt(value) || 0 : value
+            [name]: name === "age" ? parseInt(value) || 0 : value,
         }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const url = editingId ? `/api/persons/${editingId}` : "/api/persons";
+            const url = editingId
+                ? `/api/persons/${editingId}`
+                : "/api/persons";
             const method = editingId ? "PUT" : "POST";
 
-            const response = await fetch(url, {
+            const res = await fetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(person),
             });
 
-            if (!response.ok) throw new Error('Ошибка сохранения');
+            if (!res.ok) throw new Error("Ошибка сохранения");
 
             setPerson({ name: "", age: 0, email: "" });
             setEditingId(null);
-            await fetchPeople(searchTerm);
+            fetchPeople(searchTerm);
         } catch (err) {
-            setError('Ошибка при сохранении данных');
+            setError("Ошибка при сохранении");
         }
     };
 
     const handleDelete = async (id: number) => {
-        if (!window.confirm('Вы уверены, что хотите удалить этого пользователя?')) return;
+        if (!window.confirm("Удалить пользователя?")) return;
 
         try {
-            const response = await fetch(`/api/persons/${id}`, { method: 'DELETE' });
-            if (!response.ok) throw new Error('Ошибка удаления');
+            const res = await fetch(`/api/persons/${id}`, { method: "DELETE" });
+            if (!res.ok) throw new Error("Ошибка удаления");
 
-            if (people.length === 1 && currentPage > 1) {
-                setCurrentPage(prev => prev - 1);
-            } else {
-                await fetchPeople(searchTerm);
-            }
+            fetchPeople(searchTerm);
         } catch (err) {
-            setError('Не удалось удалить пользователя');
+            setError("Ошибка удаления пользователя");
         }
     };
 
-    // Компонент пагинации
-    const Pagination = () => {
-        const totalPages = Math.ceil(totalItems / itemsPerPage);
-        if (totalPages <= 1) return null;
+    const handleSort = (field: SortableField) => {
+        const direction: "asc" | "desc" =
+            sortConfig.field === field && sortConfig.direction === "asc"
+                ? "desc"
+                : "asc";
+        setSortConfig({ field, direction });
+    };
 
-        const maxVisiblePages = 5;
-        let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    const handleEdit = (personToEdit: Person) => {
+        setPerson({
+            name: personToEdit.name,
+            age: personToEdit.age,
+            email: personToEdit.email,
+        });
+        setEditingId(personToEdit.id ?? null);
+    };
 
-        if (endPage - startPage + 1 < maxVisiblePages) {
-            startPage = Math.max(1, endPage - maxVisiblePages + 1);
-        }
-
-        const pages = Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
-
-        return (
-            <div className="pagination">
-                <button
-                    onClick={() => setCurrentPage(1)}
-                    disabled={currentPage === 1}
-                    aria-label="Первая страница"
-                >
-                    «
-                </button>
-                <button
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    aria-label="Предыдущая страница"
-                >
-                    ‹
-                </button>
-
-                {startPage > 1 && <span className="ellipsis">...</span>}
-
-                {pages.map(page => (
-                    <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={currentPage === page ? 'active' : ''}
-                        aria-label={`Страница ${page}`}
-                        aria-current={currentPage === page ? 'page' : undefined}
-                    >
-                        {page}
-                    </button>
-                ))}
-
-                {endPage < totalPages && <span className="ellipsis">...</span>}
-
-                <button
-                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                    aria-label="Следующая страница"
-                >
-                    ›
-                </button>
-                <button
-                    onClick={() => setCurrentPage(totalPages)}
-                    disabled={currentPage === totalPages}
-                    aria-label="Последняя страница"
-                >
-                    »
-                </button>
-
-                <select
-                    value={itemsPerPage}
-                    onChange={(e) => {
-                        setItemsPerPage(Number(e.target.value));
-                        setCurrentPage(1);
-                    }}
-                    aria-label="Количество элементов на странице"
-                >
-                    {[5, 10, 20, 50].map(size => (
-                        <option key={size} value={size}>
-                            {size} на странице
-                        </option>
-                    ))}
-                </select>
-            </div>
-        );
+    const handleSearch = (term: string) => {
+        setSearchTerm(term);
+        setPagination((prev) => ({ ...prev, page: 1 }));
+        fetchPeople(term);
     };
 
     return (
-        <ThemeContext.Provider value={{ theme, toggleTheme }}>
+        <ThemeProvider>
             <div className="container">
                 <header className="header">
                     <h1>Список пользователей</h1>
@@ -260,160 +111,40 @@ export function App() {
                 </header>
 
                 {error && (
-                    <div className="error-banner" onClick={() => setError(null)}>
-                        {error}
-                    </div>
+                    <ErrorBanner error={error} onDismiss={() => setError(null)} />
                 )}
 
                 <main className="main-content">
                     <section className="card user-grid-container">
-                        <div className="grid-header-row">
-                            <div>
-                                <h2>Текущие пользователи</h2>
-                                <div className="search-container">
-                                    <input
-                                        type="text"
-                                        placeholder="Поиск по имени, email или возрасту..."
-                                        value={searchTerm}
-                                        onChange={handleSearchChange}
-                                        className="search-input"
-                                    />
-                                </div>
-                            </div>
-                            <div className="total-items">Всего: {totalItems}</div>
-                        </div>
-
-                        {isLoading ? (
-                            <div className="loader-container">
-                                <div className="loader" />
-                            </div>
-                        ) : (
-                            <>
-                                {people.length === 0 ? (
-                                    <div className="no-data">
-                                        <p>Нет данных для отображения</p>
-                                        <button className="button refresh-button" onClick={() => fetchPeople(searchTerm)}>
-                                            Обновить
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <div className="table-responsive">
-                                            <table className="user-table">
-                                                <thead>
-                                                <tr>
-                                                    <th onClick={() => handleSort('id')}>
-                                                        ID {getSortIndicator('id')}
-                                                    </th>
-                                                    <th onClick={() => handleSort('name')}>
-                                                        Имя {getSortIndicator('name')}
-                                                    </th>
-                                                    <th onClick={() => handleSort('age')}>
-                                                        Возраст {getSortIndicator('age')}
-                                                    </th>
-                                                    <th onClick={() => handleSort('email')}>
-                                                        Email {getSortIndicator('email')}
-                                                    </th>
-                                                    <th>Действия</th>
-                                                </tr>
-                                                </thead>
-                                                <tbody>
-                                                {people.map((p) => (
-                                                    <tr key={p.id}>
-                                                        <td>{p.id}</td>
-                                                        <td>{p.name}</td>
-                                                        <td>{p.age}</td>
-                                                        <td>{p.email}</td>
-                                                        <td className="actions">
-                                                            <button
-                                                                className="button edit-button"
-                                                                onClick={() => {
-                                                                    setPerson(p);
-                                                                    setEditingId(p.id!);
-                                                                }}
-                                                            >
-                                                                ✏️ Редактировать
-                                                            </button>
-                                                            <button
-                                                                className="button delete-button"
-                                                                onClick={() => handleDelete(p.id!)}
-                                                            >
-                                                                🗑️ Удалить
-                                                            </button>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                        <Pagination />
-                                    </>
-                                )}
-                            </>
-                        )}
+                        <PersonTable
+                            people={people}
+                            isLoading={loading}
+                            pagination={pagination}
+                            setPagination={setPagination}
+                            onSearch={handleSearch}
+                            onSort={handleSort}
+                            onDelete={handleDelete}
+                            onEdit={handleEdit}
+                            searchTerm={searchTerm}
+                            fetchPeople={fetchPeople}
+                            sortConfig={sortConfig}
+                        />
                     </section>
 
-                    <section className="card user-form">
-                        <h2>{editingId ? "Редактирование" : "Новый пользователь"}</h2>
-                        <form onSubmit={handleSubmit} className="form">
-                            <div className="form-group">
-                                <label htmlFor="name">Имя</label>
-                                <input
-                                    id="name"
-                                    name="name"
-                                    value={person.name}
-                                    onChange={handleChange}
-                                    required
-                                />
-                            </div>
-
-                            <div className="form-group">
-                                <label htmlFor="age">Возраст</label>
-                                <input
-                                    id="age"
-                                    name="age"
-                                    type="number"
-                                    value={person.age || ""}
-                                    onChange={handleChange}
-                                    min="1"
-                                    max="150"
-                                    required
-                                />
-                            </div>
-
-                            <div className="form-group">
-                                <label htmlFor="email">Email</label>
-                                <input
-                                    id="email"
-                                    name="email"
-                                    type="email"
-                                    value={person.email}
-                                    onChange={handleChange}
-                                    required
-                                />
-                            </div>
-
-                            <div className="form-actions">
-                                <button type="submit" className="button submit-button">
-                                    {editingId ? "Обновить" : "Добавить"}
-                                </button>
-                                {editingId && (
-                                    <button
-                                        type="button"
-                                        className="button cancel-button"
-                                        onClick={() => {
-                                            setPerson({ name: "", age: 0, email: "" });
-                                            setEditingId(null);
-                                        }}
-                                    >
-                                        Отмена
-                                    </button>
-                                )}
-                            </div>
-                        </form>
-                    </section>
+                    <UserForm
+                        person={person}
+                        editingId={editingId}
+                        onChange={handleChange}
+                        onSubmit={handleSubmit}
+                        onCancel={() => {
+                            setPerson({ name: "", age: 0, email: "" });
+                            setEditingId(null);
+                        }}
+                    />
                 </main>
             </div>
-        </ThemeContext.Provider>
+        </ThemeProvider>
     );
-}
+};
+
+export default App;

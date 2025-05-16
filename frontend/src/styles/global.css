@@ -492,3 +492,53 @@ th.sort-desc::after {
     opacity: 1;
 }
 
+/* Стили для сортировки */
+th {
+    cursor: pointer;
+    position: relative;
+    padding-right: 20px !important;
+    user-select: none;
+    transition: background-color 0.2s;
+}
+
+th:hover {
+    background-color: rgba(59, 130, 246, 0.1);
+}
+
+th.sort-active {
+    background-color: rgba(59, 130, 246, 0.2);
+}
+
+th::after {
+    content: '';
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.5;
+}
+
+th.sort-asc::after {
+    content: '↑';
+    opacity: 1;
+}
+
+th.sort-desc::after {
+    content: '↓';
+    opacity: 1;
+}
+
+/* Анимация для Loader */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loader {
+    border: 3px solid var(--bg-secondary);
+    border-top: 3px solid var(--accent);
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    animation: spin 1s linear infinite;
+}

@@ -1,14 +1,15 @@
-import { useContext } from 'react';
-import { ThemeContext } from '../App';
+import { useTheme } from '../../hooks/useTheme';
 
-export function ThemeToggle() {
-    const { theme, toggleTheme } = useContext(ThemeContext);
+export const ThemeToggle = () => {
+    const { theme, toggleTheme } = useTheme();
+
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
 
     return (
         <button
             onClick={toggleTheme}
             className="theme-toggle-button"
-            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+            aria-label={`Switch to ${nextTheme} theme`}
         >
             {theme === 'dark' ? (
                 <>
@@ -23,4 +24,4 @@ export function ThemeToggle() {
             )}
         </button>
     );
-}
+};

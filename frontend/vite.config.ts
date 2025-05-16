@@ -1,10 +1,16 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc' // Более быстрый компилятор
+import * as path from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig({
   base: "/",
   plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
   build: {
     outDir: 'dist',
     emptyOutDir: true,
